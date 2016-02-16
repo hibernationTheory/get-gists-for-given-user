@@ -42,7 +42,7 @@ def get_all_gist_filenames(gists_all):
 		filenames.append(file_name)
 	return filenames
 
-def get_content_data_for_gist(gist, prefix):
+def get_content_data_for_gist(gist, prefix=None):
 	"""gets content data from a given gist"""
 	if not gist:
 		return None
@@ -56,7 +56,12 @@ def get_content_data_for_gist(gist, prefix):
 		file_item_data = file_item[1]
 
 		language = file_item_data["language"]
-		if language == "Markdown" and file_name.startswith(prefix):
+		if not prefix:
+			conditional = True
+		else:
+			conditional = filename.startswith(prefix)
+		
+		if language == "Markdown" and conditional:
 			return {
 				"data":file_item_data, 
 				"name":file_name,
@@ -84,7 +89,7 @@ def download_from_url(url, file_path):
 	        fd.write(chunk)
 	return True
 
-def run(username, save_folder, prefix):
+def run(username, save_folder, prefix=None):
 	gist_all = get_all_gists_for_user(username)
 	gist_filenames = get_all_gist_filenames(gist_all)
 	delete_non_matching_files_from_folder(gist_filenames, save_folder)
