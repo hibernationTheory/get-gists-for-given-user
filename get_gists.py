@@ -1,7 +1,11 @@
 """
-Gets all the Markdown files that has the prefix '_til_' from a gist account of a given username,
-download them into a folder, if the folder doesn't have that file with the same name AND same size.
+Gets all the Markdown files that has the given prefix (like: '_til_') from a gist account of a given username,
+download them into a folder and creates a json metadata file for it as well. if the folder doesn't have that file with the same name AND same size.
 Also removes the files in the folder that doesn't match the filename content of the gists of the user.
+"""
+
+"""
+TO DO: Do I even need the markdown file anymore? I am capturing all the data in the .json file anyway.
 """
 
 #stlib
@@ -64,10 +68,10 @@ def get_content_data_for_gist(gist, prefix=None):
 			conditional = True
 		else:
 			conditional = file_name.startswith(prefix)
-		
+
 		if language == "Markdown" and conditional:
 			return {
-				"data":file_item_data, 
+				"data":file_item_data,
 				"name":file_name,
 				"comments_url":gist["comments_url"],
 				"id": gist_id,
@@ -81,8 +85,8 @@ def download_gist(file_path, data):
 		if current_size == data["size"]:
 			print("skipping file since file size in disk is same: %s" %file_path)
 			return False
-	download_from_url(data["raw_url"], file_path)
-	return True
+	content = download_from_url(data["raw_url"], file_path)
+	return content
 
 def download_from_url(url, file_path):
 	"""downloads the file at the given url to the given path"""
