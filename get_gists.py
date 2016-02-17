@@ -42,6 +42,10 @@ def get_all_gist_filenames(gists_all):
 		filenames.append(file_name)
 	return filenames
 
+def add_json_filenames_to_list(filenames_list):
+	json_filenames_list = [filename.replace('.md', '.json') for filename in filenames_list]
+	filenames_list.extend(json_filenames_list)
+
 def get_content_data_for_gist(gist, prefix=None):
 	"""gets content data from a given gist"""
 	if not gist:
@@ -59,7 +63,7 @@ def get_content_data_for_gist(gist, prefix=None):
 		if not prefix:
 			conditional = True
 		else:
-			conditional = filename.startswith(prefix)
+			conditional = file_name.startswith(prefix)
 		
 		if language == "Markdown" and conditional:
 			return {
@@ -76,22 +80,25 @@ def download_gist(file_path, data):
 		current_size = os.path.getsize(file_path)
 		if current_size == data["size"]:
 			print("skipping file since file size in disk is same: %s" %file_path)
-			return
+			return False
 	download_from_url(data["raw_url"], file_path)
 	return True
 
 def download_from_url(url, file_path):
 	"""downloads the file at the given url to the given path"""
 	r = requests.get(url, stream=True)
+	content = ''
 	print("downloading the file at: " + url)
 	with open(file_path, "wb") as fd:
 	    for chunk in r.iter_content(20):
+	    	content = content + chunk
 	        fd.write(chunk)
-	return True
+	return content
 
-def run(username, save_folder, prefix=None):
+def run(username, save_folder, prefix=None, data_file_name="gist_data.json"):
 	gist_all = get_all_gists_for_user(username)
 	gist_filenames = get_all_gist_filenames(gist_all)
+	add_json_filenames_to_list(gist_filenames)
 	delete_non_matching_files_from_folder(gist_filenames, save_folder)
 
 	for gist in gist_all:
@@ -99,4 +106,9 @@ def run(username, save_folder, prefix=None):
 		if not content_data:
 			continue
 		file_path = os.path.join(save_folder, content_data["name"])
-		download_gist(file_path, content_data["data"])
+		file_data_path = os.path.join(save_folder, content_data["name"].replace('.md', '.json'))
+		text_content = download_gist(file_path, content_data["data"])
+		if text_content:
+			content_data["content"] = text_content
+			with open(file_data_path, 'w') as target_file:
+				json.dump(content_data, target_file, indent=True)
