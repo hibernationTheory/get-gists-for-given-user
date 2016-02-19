@@ -13,6 +13,7 @@ import os
 import json
 
 #3rd party
+import frontmatter
 import requests
 
 def delete_non_matching_files_from_folder(filename_list, folder_path):
@@ -56,7 +57,7 @@ def get_content_data_for_gist(gist, prefix=None):
 		return None
 	files_dict = gist["files"]
 	gist_id = gist["id"]
-	gist_url = "https://api.github.com/users/hibernationTheory/gists{/gist_id}".replace("{/gist_id}", gist_id)
+	gist_url = gist["html_url"]
 	md_content = None
 
 	for file_item in files_dict.iteritems():
@@ -73,12 +74,13 @@ def get_content_data_for_gist(gist, prefix=None):
 			return {
 				"data":file_item_data,
 				"name":file_name,
+				"created_at":gist["created_at"],
 				"comments_url":gist["comments_url"],
 				"id": gist_id,
-				"url": gist_url
+				"url": gist_url,
 			}
 
-def download_gist(file_path, data):
+def download_markdown_gist(file_path, data):
 	"""downloads the file for the given gist to the given path"""
 	if os.path.exists(file_path):
 		current_size = os.path.getsize(file_path)
@@ -111,8 +113,12 @@ def run(username, save_folder, prefix=None, data_file_name="gist_data.json"):
 			continue
 		file_path = os.path.join(save_folder, content_data["name"])
 		file_data_path = os.path.join(save_folder, content_data["name"].replace('.md', '.json'))
-		text_content = download_gist(file_path, content_data["data"])
-		if text_content:
-			content_data["content"] = text_content
+		markdown_content = download_markdown_gist(file_path, content_data["data"])
+		if markdown_content:
+			gist_frontmatter = frontmatter.loads(markdown_content)
+			content = gist_frontmatter.content
+			metadata = gist_frontmatter.metadata
+			content_data["content"] = content
+			content_data["metadata"] = metadata
 			with open(file_data_path, 'w') as target_file:
 				json.dump(content_data, target_file, indent=True)
